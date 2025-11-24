@@ -80,18 +80,45 @@
       urlInput.value = resolved;
     }
 
+    // Debounce helper for URL input changes
+    let urlInputDebounceTimer = null;
+    function debounceUrlUpdate() {
+      if (urlInputDebounceTimer) {
+        clearTimeout(urlInputDebounceTimer);
+      }
+      urlInputDebounceTimer = setTimeout(() => {
+        if (urlInput.value && urlInput.value !== iframe.src) {
+          setIframeSrc(urlInput.value);
+        }
+      }, 300);
+    }
+
     // Open / reload behavior: Enter key or blur will update iframe
     urlInput.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') {
         ev.preventDefault();
+        // Clear any pending debounce timer when user presses Enter
+        if (urlInputDebounceTimer) {
+          clearTimeout(urlInputDebounceTimer);
+          urlInputDebounceTimer = null;
+        }
         setIframeSrc(urlInput.value);
       }
     });
     urlInput.addEventListener('blur', () => {
+      // Clear any pending debounce timer on blur
+      if (urlInputDebounceTimer) {
+        clearTimeout(urlInputDebounceTimer);
+        urlInputDebounceTimer = null;
+      }
       // on blur, apply the URL so the field is 'workable'
       if (urlInput.value && urlInput.value !== iframe.src) {
         setIframeSrc(urlInput.value);
       }
+    });
+    // Add input event listener with debounce for automatic updates
+    urlInput.addEventListener('input', () => {
+      debounceUrlUpdate();
     });
 
     // Listen for location updates posted from content script (in the iframe)
@@ -104,6 +131,11 @@
 
         const data = ev.data;
         if (data?.type === 'wrapper:location' && typeof data.href === 'string') {
+          // Clear any pending debounce timer when receiving location update from content script
+          if (urlInputDebounceTimer) {
+            clearTimeout(urlInputDebounceTimer);
+            urlInputDebounceTimer = null;
+          }
           // Update the input but do not force navigation unless user acts
           if (urlInput.value !== data.href) {
             urlInput.value = data.href;
@@ -192,6 +224,11 @@
       try {
         const current = iframe.contentWindow.location.href;
         if (current && urlInput.value !== current) {
+          // Clear any pending debounce timer when iframe loads
+          if (urlInputDebounceTimer) {
+            clearTimeout(urlInputDebounceTimer);
+            urlInputDebounceTimer = null;
+          }
           urlInput.value = current;
         }
       } catch (error__) {
@@ -256,6 +293,11 @@
         if (iframe?.contentWindow?.location) {
           const current = iframe.contentWindow.location.href;
           if (current && urlInput.value !== current) {
+            // Clear any pending debounce timer when syncing from iframe
+            if (urlInputDebounceTimer) {
+              clearTimeout(urlInputDebounceTimer);
+              urlInputDebounceTimer = null;
+            }
             urlInput.value = current;
           }
         }
@@ -265,7 +307,12 @@
     }, SYNC_INTERVAL_MS);
 
     // Clear interval on unload
-    window.addEventListener('unload', () => clearInterval(syncHandle));
+    window.addEventListener('unload', () => {
+      clearInterval(syncHandle);
+      if (urlInputDebounceTimer) {
+        clearTimeout(urlInputDebounceTimer);
+      }
+    });
     } catch (error) {
       console.error('Error in wrapper script:', error);
       // Fallback: at least update the title even if other things fail
