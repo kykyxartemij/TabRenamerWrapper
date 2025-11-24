@@ -35,6 +35,15 @@ function generateSmartTitle(url) {
   return url;
 }
 
+// Validate that we're running in a Chrome extension context
+function validateChromeExtensionContext() {
+  if (typeof chrome === 'undefined' || !chrome.tabs) {
+    alert('This extension must be loaded as a Chrome extension, not as a regular webpage.');
+    return false;
+  }
+  return true;
+}
+
 // Try to get active tab URL and fill URL field if blank and it's http(s)
 if (typeof chrome !== 'undefined' && chrome.tabs) {
   chrome.tabs.query({active: true, currentWindow: true}, tabs => {
@@ -60,10 +69,7 @@ function applyToCurrent() {
     return; 
   }
   
-  if (typeof chrome === 'undefined' || !chrome.tabs) {
-    alert('This extension must be loaded as a Chrome extension, not as a regular webpage.');
-    return;
-  }
+  if (!validateChromeExtensionContext()) return;
   
   const finalTitle = title || url;
   const wrapper = buildWrapperUrl(url, finalTitle);
@@ -82,10 +88,7 @@ function openInNewTab() {
     return; 
   }
   
-  if (typeof chrome === 'undefined' || !chrome.tabs) {
-    alert('This extension must be loaded as a Chrome extension, not as a regular webpage.');
-    return;
-  }
+  if (!validateChromeExtensionContext()) return;
   
   const finalTitle = title || url;
   const wrapper = buildWrapperUrl(url, finalTitle);
