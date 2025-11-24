@@ -2,6 +2,42 @@
 
 > **⚠️ IMPORTANT DISCLAIMER**: This extension was **fully written by AI**. No real person was involved in its development.
 
+## Installation
+
+### Quick Start (Developer Mode)
+
+1. **Clone or download** this repository:
+   ```bash
+   git clone https://github.com/kykyxartemij/TabRenamerWrapper.git
+   cd TabRenamerWrapper
+   ```
+
+2. **Open Chrome/Edge** and navigate to the extensions page:
+   - **Chrome**: `chrome://extensions/`
+   - **Edge**: `edge://extensions/`
+   - **Yandex**: `browser://extensions/`
+
+3. **Enable Developer mode** (toggle in the top-right corner)
+
+4. **Click "Load unpacked"**
+
+5. **Select** the `TabRenamerWrapper` directory
+
+6. ✅ **Done!** You should see the extension icon in your toolbar.
+
+### How to Use
+
+1. Click the extension icon in your browser toolbar
+2. Enter a custom title and the URL you want to wrap (or let it auto-fill from the current tab)
+3. Click **"Apply to current tab"** or **"Open in new tab"**
+4. Your custom title will now persist even if the service goes down!
+
+### From Chrome Web Store
+
+_Not yet published to the Chrome Web Store_
+
+---
+
 ## What is TabRenamerWrapper?
 
 TabRenamerWrapper is a **simple and minimal** Chrome/Edge browser extension that lets you assign **custom tab titles** for your local development services (localhost on different ports). The custom title remains visible even when the target service is unavailable or shows a browser error page.
@@ -35,33 +71,7 @@ This works because the wrapper page is hosted by the extension, so it can always
 ✅ **Error resilience** - Title stays visible even if the target is down or blocks framing  
 ✅ **Simple & lightweight** - No external storage, no complexity
 
-## Installation
-
-### From Source (Developer Mode)
-
-1. Clone or download this repository:
-   ```bash
-   git clone https://github.com/kykyxartemij/TabRenamerWrapper.git
-   cd TabRenamerWrapper
-   ```
-
-2. Open Chrome/Edge and navigate to:
-   - **Chrome**: `chrome://extensions/`
-   - **Edge**: `edge://extensions/`
-
-3. Enable **Developer mode** (toggle in the top-right corner)
-
-4. Click **Load unpacked**
-
-5. Select the `TabRenamerWrapper` directory
-
-6. The extension is now installed! You should see the extension icon in your toolbar.
-
-### From Chrome Web Store
-
-_Not yet published to the Chrome Web Store_
-
-## Usage
+## Usage (Detailed)
 
 ### Basic Usage
 
