@@ -38,6 +38,11 @@
 
     // (Removed the explicit 'Open' button — URL will update on Enter or on blur)
 
+    // Declare iframe and related variables early so they can be referenced in functions below
+    let iframe = null;
+    let iframeLoaded = false;
+    let urlInputDebounceTimer = null;
+
     // Copy behavior
     copyBtn.addEventListener('click', async () => {
       const text = urlInput.value;
@@ -81,7 +86,6 @@
     }
 
     // Debounce helper for URL input changes
-    let urlInputDebounceTimer = null;
     function debounceUrlUpdate() {
       if (urlInputDebounceTimer) {
         clearTimeout(urlInputDebounceTimer);
@@ -212,12 +216,11 @@
     }
 
     // Create and append the iframe
-    const iframe = document.createElement('iframe');
+    iframe = document.createElement('iframe');
     iframe.id = 'frame';
     iframe.src = target;
     
     // Track if iframe loaded successfully
-    let iframeLoaded = false;
     iframe.addEventListener('load', () => {
       iframeLoaded = true;
       // Try to sync the visible URL with actual iframe location when same-origin
@@ -287,7 +290,8 @@
     }, IFRAME_LOAD_TIMEOUT_MS);
 
     // Periodically attempt to sync iframe location when same-origin (best-effort)
-    const SYNC_INTERVAL_MS = 1500;
+    // Use shorter interval for better responsiveness
+    const SYNC_INTERVAL_MS = 500;
     const syncHandle = setInterval(() => {
       try {
         if (iframe?.contentWindow?.location) {
@@ -302,6 +306,7 @@
           }
         }
       } catch (error__) {
+        // Expected for cross-origin iframes; content_sync.js handles those
         console.debug('Periodic iframe sync skipped (cross-origin)', error__);
       }
     }, SYNC_INTERVAL_MS);
