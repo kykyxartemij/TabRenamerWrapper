@@ -31,13 +31,18 @@
 
       // Set the document title (this is the key feature!)
       document.title = title;
+      
+      // Safely set text content to avoid XSS
       document.getElementById('titleElm').textContent = title;
       document.getElementById('urlElm').textContent = target;
 
       const container = document.getElementById('container');
 
       if (!target) {
-        container.innerHTML = '<div class="notice">No target URL provided. Please use the extension popup to set a URL and title.</div>';
+        const notice = document.createElement('div');
+        notice.className = 'notice';
+        notice.textContent = 'No target URL provided. Please use the extension popup to set a URL and title.';
+        container.appendChild(notice);
         return;
       }
 
@@ -55,24 +60,52 @@
       container.appendChild(iframe);
 
       // Add fallback notice for when iframe is blocked or fails to load
+      const IFRAME_LOAD_TIMEOUT_MS = 2000;
       setTimeout(() => {
         if (!iframeLoaded) {
           const fallback = document.createElement('div');
           fallback.className = 'notice';
-          fallback.innerHTML = `
-            <strong>Note:</strong> The page content may not be visible in this frame due to:
-            <ul style="margin:8px 0; padding-left:20px">
-              <li>The target service is currently unavailable</li>
-              <li>Security headers (X-Frame-Options or CSP) preventing embedding</li>
-            </ul>
-            <div class="error-hint">
-              💡 <strong>Your custom tab title "${title}" is still visible!</strong><br>
-              To access the content directly: <a id="openDirect" target="_blank" rel="noopener" href="${target}">Open ${target} in a new tab</a>
-            </div>
-          `;
+          
+          const strong = document.createElement('strong');
+          strong.textContent = 'Note:';
+          fallback.appendChild(strong);
+          
+          fallback.appendChild(document.createTextNode(' The page content may not be visible in this frame due to:'));
+          
+          const ul = document.createElement('ul');
+          ul.style.margin = '8px 0';
+          ul.style.paddingLeft = '20px';
+          
+          const li1 = document.createElement('li');
+          li1.textContent = 'The target service is currently unavailable';
+          ul.appendChild(li1);
+          
+          const li2 = document.createElement('li');
+          li2.textContent = 'Security headers (X-Frame-Options or CSP) preventing embedding';
+          ul.appendChild(li2);
+          
+          fallback.appendChild(ul);
+          
+          const errorHint = document.createElement('div');
+          errorHint.className = 'error-hint';
+          errorHint.textContent = '💡 Your custom tab title "' + title + '" is still visible!';
+          
+          const br = document.createElement('br');
+          errorHint.appendChild(br);
+          
+          errorHint.appendChild(document.createTextNode('To access the content directly: '));
+          
+          const link = document.createElement('a');
+          link.href = target;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = 'Open ' + target + ' in a new tab';
+          errorHint.appendChild(link);
+          
+          fallback.appendChild(errorHint);
           container.appendChild(fallback);
         }
-      }, 2000); // Wait 2 seconds before showing fallback message
+      }, IFRAME_LOAD_TIMEOUT_MS);
     })();
   </script>
 </body>

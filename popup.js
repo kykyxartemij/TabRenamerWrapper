@@ -49,7 +49,7 @@ async function loadMapping(url) {
 function generateSmartTitle(url) {
   try {
     const urlObj = new URL(url);
-    if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+    if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || urlObj.hostname === '::1') {
       const port = urlObj.port || (urlObj.protocol === 'https:' ? '443' : '80');
       return `localhost:${port}`;
     }
