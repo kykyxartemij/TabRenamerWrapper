@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    html,body{height:100%; margin:0; font-family: Arial, Helvetica, sans-serif}
+    .top{height:40px; background:#f6f6f6; display:flex; align-items:center; gap:10px; padding:0 12px; box-sizing:border-box; border-bottom:1px solid #e0e0e0}
+    .title{font-weight:600}
+    .url{font-size:12px; color:#666; margin-left:auto}
+    #frame{border:0; width:100%; height:calc(100% - 40px); display:block}
+    .notice{padding:12px; font-size:13px}
+    a.small{font-size:13px; color:#0366d6}
+  </style>
+  <title>Loading…</title>
+</head>
+<body>
+  <div class="top">
+    <div class="title" id="titleElm">...</div>
+    <div class="url" id="urlElm"></div>
+  </div>
+  <div id="container"></div>
+
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const target = params.get('target') || '';
+      const title = params.get('title') || target || 'Wrapped tab';
+
+      document.title = title;
+      document.getElementById('titleElm').textContent = title;
+      document.getElementById('urlElm').textContent = target;
+
+      const container = document.getElementById('container');
+
+      if (!target) {
+        container.innerHTML = '<div class="notice">No target URL provided.</div>';
+        return;
+      }
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'frame';
+      iframe.src = target;
+      iframe.addEventListener('load', () => {
+        // Loaded — nothing extra needed
+      });
+
+      // Append iframe first; below we add a fallback note (visible if iframe blank/blocked)
+      container.appendChild(iframe);
+
+      const fallback = document.createElement('div');
+      fallback.className = 'notice';
+      fallback.innerHTML = 'If the page does not load here (blocked by X-Frame-Options/CSP), open it directly: <a class="small" id="openDirect" target="_blank" rel="noopener">Open directly</a>';
+      container.appendChild(fallback);
+      document.getElementById('openDirect').href = target;
+    })();
+  </script>
+</body>
+</html>
