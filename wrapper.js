@@ -38,6 +38,11 @@
 
     // (Removed the explicit 'Open' button — URL will update on Enter or on blur)
 
+    // Declare iframe and related variables early so they can be referenced in functions below
+    let iframe = null;
+    let iframeLoaded = false;
+    let urlInputDebounceTimer = null;
+
     // Copy behavior
     copyBtn.addEventListener('click', async () => {
       const text = urlInput.value;
@@ -70,6 +75,7 @@
 
     // Helper to set iframe src safely
     function setIframeSrc(newUrl) {
+      if (!iframe) return; // Guard against calling before iframe is created
       // rough validation: if missing protocol, add http://
       let resolved = newUrl.trim();
       if (!/^https?:\/\//i.test(resolved)) {
@@ -80,18 +86,46 @@
       urlInput.value = resolved;
     }
 
+    // Debounce helper for URL input changes
+    function debounceUrlUpdate() {
+      if (urlInputDebounceTimer) {
+        clearTimeout(urlInputDebounceTimer);
+        urlInputDebounceTimer = null;
+      }
+      urlInputDebounceTimer = setTimeout(() => {
+        if (iframe && urlInput && urlInput.value && urlInput.value !== iframe.src) {
+          setIframeSrc(urlInput.value);
+        }
+        urlInputDebounceTimer = null;
+      }, 300);
+    }
+
     // Open / reload behavior: Enter key or blur will update iframe
     urlInput.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') {
         ev.preventDefault();
+        // Clear any pending debounce timer when user presses Enter
+        if (urlInputDebounceTimer) {
+          clearTimeout(urlInputDebounceTimer);
+          urlInputDebounceTimer = null;
+        }
         setIframeSrc(urlInput.value);
       }
     });
     urlInput.addEventListener('blur', () => {
+      // Clear any pending debounce timer on blur
+      if (urlInputDebounceTimer) {
+        clearTimeout(urlInputDebounceTimer);
+        urlInputDebounceTimer = null;
+      }
       // on blur, apply the URL so the field is 'workable'
-      if (urlInput.value && urlInput.value !== iframe.src) {
+      if (iframe && urlInput.value && urlInput.value !== iframe.src) {
         setIframeSrc(urlInput.value);
       }
+    });
+    // Add input event listener with debounce for automatic updates
+    urlInput.addEventListener('input', () => {
+      debounceUrlUpdate();
     });
 
     // Listen for location updates posted from content script (in the iframe)
@@ -104,6 +138,11 @@
 
         const data = ev.data;
         if (data?.type === 'wrapper:location' && typeof data.href === 'string') {
+          // Clear any pending debounce timer when receiving location update from content script
+          if (urlInputDebounceTimer) {
+            clearTimeout(urlInputDebounceTimer);
+            urlInputDebounceTimer = null;
+          }
           // Update the input but do not force navigation unless user acts
           if (urlInput.value !== data.href) {
             urlInput.value = data.href;
@@ -180,18 +219,22 @@
     }
 
     // Create and append the iframe
-    const iframe = document.createElement('iframe');
+    iframe = document.createElement('iframe');
     iframe.id = 'frame';
     iframe.src = target;
     
     // Track if iframe loaded successfully
-    let iframeLoaded = false;
     iframe.addEventListener('load', () => {
       iframeLoaded = true;
       // Try to sync the visible URL with actual iframe location when same-origin
       try {
         const current = iframe.contentWindow.location.href;
         if (current && urlInput.value !== current) {
+          // Clear any pending debounce timer when iframe loads
+          if (urlInputDebounceTimer) {
+            clearTimeout(urlInputDebounceTimer);
+            urlInputDebounceTimer = null;
+          }
           urlInput.value = current;
         }
       } catch (error__) {
@@ -200,6 +243,48 @@
     });
 
     container.appendChild(iframe);
+
+    // Helper to sync URL from iframe to input field
+    function syncIframeUrl() {
+      try {
+        if (iframe?.contentWindow?.location) {
+          const current = iframe.contentWindow.location.href;
+          if (current && urlInput.value !== current) {
+            // Clear any pending debounce timer
+            if (urlInputDebounceTimer) {
+              clearTimeout(urlInputDebounceTimer);
+              urlInputDebounceTimer = null;
+            }
+            urlInput.value = current;
+          }
+        }
+      } catch (error__) {
+        // Cross-origin - will be handled by content_sync.js messages
+        console.debug('Cannot read iframe location (cross-origin)', error__);
+      }
+    }
+
+    // Detect user interaction with iframe to immediately sync URL field
+    // This provides instant feedback when user clicks or focuses the iframe
+    iframe.addEventListener('load', () => {
+      try {
+        // Add listeners to iframe content (only works for same-origin)
+        if (iframe.contentWindow && iframe.contentDocument) {
+          iframe.contentDocument.addEventListener('click', syncIframeUrl);
+          iframe.contentDocument.addEventListener('mousedown', syncIframeUrl);
+        }
+      } catch (error__) {
+        // Cross-origin - can't add listeners, rely on postMessage from content_sync.js
+        console.debug('Cannot add listeners to cross-origin iframe', error__);
+      }
+    });
+    
+    // Detect when user clicks on iframe element itself (works for all origins)
+    iframe.addEventListener('mouseenter', syncIframeUrl);
+    iframe.addEventListener('click', syncIframeUrl);
+    
+    // When wrapper regains focus after user clicked in iframe, sync URL
+    window.addEventListener('focus', syncIframeUrl);
 
     // Add fallback notice for when iframe is blocked or fails to load
     const IFRAME_LOAD_TIMEOUT_MS = 2000;
@@ -250,22 +335,34 @@
     }, IFRAME_LOAD_TIMEOUT_MS);
 
     // Periodically attempt to sync iframe location when same-origin (best-effort)
-    const SYNC_INTERVAL_MS = 1500;
+    // Use shorter interval for better responsiveness
+    const SYNC_INTERVAL_MS = 500;
     const syncHandle = setInterval(() => {
       try {
         if (iframe?.contentWindow?.location) {
           const current = iframe.contentWindow.location.href;
           if (current && urlInput.value !== current) {
+            // Clear any pending debounce timer when syncing from iframe
+            if (urlInputDebounceTimer) {
+              clearTimeout(urlInputDebounceTimer);
+              urlInputDebounceTimer = null;
+            }
             urlInput.value = current;
           }
         }
       } catch (error__) {
+        // Expected for cross-origin iframes; content_sync.js handles those
         console.debug('Periodic iframe sync skipped (cross-origin)', error__);
       }
     }, SYNC_INTERVAL_MS);
 
     // Clear interval on unload
-    window.addEventListener('unload', () => clearInterval(syncHandle));
+    window.addEventListener('unload', () => {
+      clearInterval(syncHandle);
+      if (urlInputDebounceTimer) {
+        clearTimeout(urlInputDebounceTimer);
+      }
+    });
     } catch (error) {
       console.error('Error in wrapper script:', error);
       // Fallback: at least update the title even if other things fail

@@ -2,6 +2,8 @@
 // Injected into matching pages (localhost) to notify the parent frame about location changes.
 (function(){
   try {
+    let lastHref = location.href;
+
     function notify() {
       // Gather favicon from page if present and resolve it
       let favicon = null;
@@ -18,6 +20,7 @@
       // Post message to parent; targetOrigin '*' used because extension origin is unknown here.
       // parent is the wrapper page; use '*' here but wrapper will validate origin
       window.parent.postMessage({ type: 'wrapper:location', href: location.href, favicon }, '*');
+      lastHref = location.href;
     }
 
     // Monkey-patch history methods
@@ -36,6 +39,22 @@
     };
 
     globalThis.addEventListener('popstate', notify);
+    
+    // Detect full page navigations and hash changes
+    globalThis.addEventListener('hashchange', notify);
+    
+    // Poll for URL changes to catch all navigation types (e.g., link clicks, redirects)
+    // This catches cases that other methods might miss
+    const pollInterval = setInterval(() => {
+      if (location.href !== lastHref) {
+        notify();
+      }
+    }, 500);
+    
+    // Clean up interval on page unload to prevent memory leaks
+    globalThis.addEventListener('unload', () => {
+      clearInterval(pollInterval);
+    });
 
     // Initial notify
     notify();
