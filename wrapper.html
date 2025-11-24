@@ -6,11 +6,13 @@
   <style>
     html,body{height:100%; margin:0; font-family: Arial, Helvetica, sans-serif}
     .top{height:40px; background:#f6f6f6; display:flex; align-items:center; gap:10px; padding:0 12px; box-sizing:border-box; border-bottom:1px solid #e0e0e0}
-    .title{font-weight:600}
-    .url{font-size:12px; color:#666; margin-left:auto}
+    .title{font-weight:600; font-size:14px}
+    .url{font-size:12px; color:#666; margin-left:auto; max-width:400px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
     #frame{border:0; width:100%; height:calc(100% - 40px); display:block}
-    .notice{padding:12px; font-size:13px}
-    a.small{font-size:13px; color:#0366d6}
+    .notice{padding:20px; font-size:14px; line-height:1.6}
+    .notice a{color:#0366d6; text-decoration:none}
+    .notice a:hover{text-decoration:underline}
+    .error-hint{margin-top:12px; padding:12px; background:#fff3cd; border:1px solid #ffc107; border-radius:4px; font-size:13px}
   </style>
   <title>Loading…</title>
 </head>
@@ -27,6 +29,7 @@
       const target = params.get('target') || '';
       const title = params.get('title') || target || 'Wrapped tab';
 
+      // Set the document title (this is the key feature!)
       document.title = title;
       document.getElementById('titleElm').textContent = title;
       document.getElementById('urlElm').textContent = target;
@@ -34,25 +37,42 @@
       const container = document.getElementById('container');
 
       if (!target) {
-        container.innerHTML = '<div class="notice">No target URL provided.</div>';
+        container.innerHTML = '<div class="notice">No target URL provided. Please use the extension popup to set a URL and title.</div>';
         return;
       }
 
+      // Create and append the iframe
       const iframe = document.createElement('iframe');
       iframe.id = 'frame';
       iframe.src = target;
+      
+      // Track if iframe loaded successfully
+      let iframeLoaded = false;
       iframe.addEventListener('load', () => {
-        // Loaded — nothing extra needed
+        iframeLoaded = true;
       });
 
-      // Append iframe first; below we add a fallback note (visible if iframe blank/blocked)
       container.appendChild(iframe);
 
-      const fallback = document.createElement('div');
-      fallback.className = 'notice';
-      fallback.innerHTML = 'If the page does not load here (blocked by X-Frame-Options/CSP), open it directly: <a class="small" id="openDirect" target="_blank" rel="noopener">Open directly</a>';
-      container.appendChild(fallback);
-      document.getElementById('openDirect').href = target;
+      // Add fallback notice for when iframe is blocked or fails to load
+      setTimeout(() => {
+        if (!iframeLoaded) {
+          const fallback = document.createElement('div');
+          fallback.className = 'notice';
+          fallback.innerHTML = `
+            <strong>Note:</strong> The page content may not be visible in this frame due to:
+            <ul style="margin:8px 0; padding-left:20px">
+              <li>The target service is currently unavailable</li>
+              <li>Security headers (X-Frame-Options or CSP) preventing embedding</li>
+            </ul>
+            <div class="error-hint">
+              💡 <strong>Your custom tab title "${title}" is still visible!</strong><br>
+              To access the content directly: <a id="openDirect" target="_blank" rel="noopener" href="${target}">Open ${target} in a new tab</a>
+            </div>
+          `;
+          container.appendChild(fallback);
+        }
+      }, 2000); // Wait 2 seconds before showing fallback message
     })();
   </script>
 </body>

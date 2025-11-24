@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Tab Wrapper Title",
-  "version": "0.1.0",
-  "description": "Open a wrapper page that sets a custom tab title and embeds the target URL in an iframe.",
-  "permissions": ["tabs", "activeTab"],
+  "name": "TabRenamerWrapper",
+  "version": "1.0.0",
+  "description": "Persistent custom tab titles for localhost services - keeps titles visible even when pages are unavailable.",
+  "permissions": ["tabs", "activeTab", "storage"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Set tab title"
+    "default_title": "Set custom tab title"
   }
 }
