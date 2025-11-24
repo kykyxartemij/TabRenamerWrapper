@@ -75,6 +75,7 @@
 
     // Helper to set iframe src safely
     function setIframeSrc(newUrl) {
+      if (!iframe) return; // Guard against calling before iframe is created
       // rough validation: if missing protocol, add http://
       let resolved = newUrl.trim();
       if (!/^https?:\/\//i.test(resolved)) {
@@ -91,7 +92,7 @@
         clearTimeout(urlInputDebounceTimer);
       }
       urlInputDebounceTimer = setTimeout(() => {
-        if (urlInput.value && urlInput.value !== iframe.src) {
+        if (iframe && urlInput.value && urlInput.value !== iframe.src) {
           setIframeSrc(urlInput.value);
         }
       }, 300);
@@ -116,7 +117,7 @@
         urlInputDebounceTimer = null;
       }
       // on blur, apply the URL so the field is 'workable'
-      if (urlInput.value && urlInput.value !== iframe.src) {
+      if (iframe && urlInput.value && urlInput.value !== iframe.src) {
         setIframeSrc(urlInput.value);
       }
     });
