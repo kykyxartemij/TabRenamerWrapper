@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "TabRenamerWrapper",
   "version": "1.0.0",
-  "description": "Persistent custom tab titles for localhost services - keeps titles visible even when pages are unavailable.",
-  "permissions": ["tabs", "activeTab", "storage"],
+  "description": "Simple custom tab titles for localhost services - keeps titles visible even when pages are unavailable.",
+  "permissions": ["tabs", "activeTab"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Set custom tab title",

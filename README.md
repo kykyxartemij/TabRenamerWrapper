@@ -4,7 +4,7 @@
 
 ## What is TabRenamerWrapper?
 
-TabRenamerWrapper is a minimal Chrome/Edge browser extension that lets you assign **persistent custom tab titles** for your local development services (localhost on different ports). The custom title remains visible even when the target service is unavailable or shows a browser error page.
+TabRenamerWrapper is a **simple and minimal** Chrome/Edge browser extension that lets you assign **custom tab titles** for your local development services (localhost on different ports). The custom title remains visible even when the target service is unavailable or shows a browser error page.
 
 ## The Problem
 
@@ -21,20 +21,19 @@ TabRenamerWrapper solves this by:
 
 1. **Wrapping your target URL** in an extension-hosted HTML page
 2. **Setting a custom title** on the wrapper page itself (not the embedded content)
-3. **Persisting URL→title mappings** across browser sessions
-4. **Keeping the custom title visible** even when the embedded iframe fails to load
+3. **Keeping the custom title visible** even when the embedded iframe fails to load
 
 This works because the wrapper page is hosted by the extension, so it can always set `document.title` regardless of whether the target URL is accessible.
 
 ## Features
 
 ✅ **Custom tab titles** - Set any title you want for any URL  
-✅ **Persistent storage** - URL→title mappings are saved across browser sessions  
 ✅ **Smart defaults** - Auto-generates sensible titles for localhost URLs (e.g., "localhost:3000")  
 ✅ **Two modes** - Replace current tab or open in a new tab  
-✅ **Minimal permissions** - Only requires `tabs`, `activeTab`, and `storage`  
+✅ **Minimal permissions** - Only requires `tabs` and `activeTab`  
 ✅ **Manifest V3** - Uses the latest Chrome extension format  
-✅ **Error resilience** - Title stays visible even if the target is down or blocks framing
+✅ **Error resilience** - Title stays visible even if the target is down or blocks framing  
+✅ **Simple & lightweight** - No external storage, no complexity
 
 ## Installation
 
@@ -80,17 +79,11 @@ _Not yet published to the Chrome Web Store_
 
 5. The tab will now show your custom title, even if the service is unavailable!
 
-### Advanced Features
-
-#### Persistent Mappings
-
-Once you set a custom title for a URL, it's saved automatically. The next time you open the popup on the same URL, your previous custom title will be pre-filled.
-
-#### Smart Defaults for Localhost
+### Smart Defaults for Localhost
 
 For localhost URLs, the extension automatically generates a smart default title based on the port number (e.g., `localhost:3000`, `localhost:8080`). You can override this with your own custom title.
 
-#### Error Page Resilience
+### Error Page Resilience
 
 If the target URL:
 - Is temporarily down
@@ -133,8 +126,12 @@ Traditional browser extensions cannot change tab titles on error pages because:
 TabRenamerWrapper/
 ├── manifest.json       # Extension configuration (Manifest V3)
 ├── popup.html          # Popup UI for setting custom titles
-├── popup.js            # Popup logic with storage persistence
+├── popup.js            # Popup logic
 ├── wrapper.html        # Wrapper page that embeds target URLs
+├── icons/              # Extension icons
+│   ├── icon16.png
+│   ├── icon48.png
+│   └── icon128.png
 └── README.md           # This file
 ```
 
@@ -144,9 +141,20 @@ The extension requires the following permissions:
 
 - **`tabs`**: To query and update tab information
 - **`activeTab`**: To access the currently active tab's URL
-- **`storage`**: To persist URL→title mappings across browser sessions
+
+**Note**: This extension does **NOT** use persistent storage. It's designed to be simple and lightweight.
 
 ## Limitations
+
+### No Persistent Storage
+
+This extension does not save your URL→title mappings. Each time you want to set a custom title, you'll need to:
+1. Click the extension icon
+2. Enter (or auto-fill) the URL
+3. Enter the custom title
+4. Click "Apply to current tab" or "Open in new tab"
+
+The custom title is embedded in the wrapper URL, so as long as you keep that tab open (or bookmark it), the title will persist.
 
 ### X-Frame-Options and CSP
 
@@ -172,7 +180,7 @@ If you're already on a browser error page (e.g., "Page Unavailable"), the extens
 ## Privacy
 
 - **No data is sent to external servers**
-- All URL→title mappings are stored locally using `chrome.storage.local`
+- **No storage used** - everything is kept in the wrapper URL
 - No analytics or tracking
 - No external dependencies
 
