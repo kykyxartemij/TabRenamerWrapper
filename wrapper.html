@@ -25,18 +25,26 @@
 
   <script>
     (function(){
-      const params = new URLSearchParams(location.search);
-      const target = params.get('target') || '';
-      const title = params.get('title') || target || 'Wrapped tab';
+      try {
+        const params = new URLSearchParams(location.search);
+        const target = params.get('target') || '';
+        const title = params.get('title') || target || 'Wrapped tab';
 
-      // Set the document title (this is the key feature!)
-      document.title = title;
-      
-      // Safely set text content to avoid XSS
-      document.getElementById('titleElm').textContent = title;
-      document.getElementById('urlElm').textContent = target;
-
-      const container = document.getElementById('container');
+        // Set the document title (this is the key feature!)
+        document.title = title;
+        
+        // Safely set text content to avoid XSS
+        const titleElm = document.getElementById('titleElm');
+        const urlElm = document.getElementById('urlElm');
+        const container = document.getElementById('container');
+        
+        if (!titleElm || !urlElm || !container) {
+          console.error('Required DOM elements not found');
+          return;
+        }
+        
+        titleElm.textContent = title;
+        urlElm.textContent = target;
 
       if (!target) {
         const notice = document.createElement('div');
@@ -106,6 +114,18 @@
           container.appendChild(fallback);
         }
       }, IFRAME_LOAD_TIMEOUT_MS);
+      } catch (error) {
+        console.error('Error in wrapper script:', error);
+        // Fallback: at least update the title even if other things fail
+        try {
+          const titleElm = document.getElementById('titleElm');
+          if (titleElm && titleElm.textContent === '...') {
+            titleElm.textContent = 'Error loading wrapper';
+          }
+        } catch (e) {
+          // Silent fail
+        }
+      }
     })();
   </script>
 </body>

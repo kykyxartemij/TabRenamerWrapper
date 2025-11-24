@@ -13,7 +13,12 @@ function buildWrapperUrl(targetUrl, title) {
   const params = new URLSearchParams();
   params.set('target', targetUrl);
   params.set('title', title);
-  return chrome.runtime.getURL('wrapper.html') + '?' + params.toString();
+  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+    return chrome.runtime.getURL('wrapper.html') + '?' + params.toString();
+  } else {
+    // Fallback for testing outside of extension context
+    return 'wrapper.html?' + params.toString();
+  }
 }
 
 // Generate a smart title for localhost URLs based on port
@@ -30,21 +35,32 @@ function generateSmartTitle(url) {
   return url;
 }
 
-// Try to get active tab URL and fill URL field if blank and it's http(s)
-chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-  if (!tabs || !tabs[0]) return;
-  const tab = tabs[0];
-  try {
-    if (/^https?:\/\//.test(tab.url) && !document.getElementById('url').value) {
-      document.getElementById('url').value = tab.url;
-      // Generate smart title or use tab title
-      const smartTitle = generateSmartTitle(tab.url);
-      document.getElementById('title').value = tab.title || smartTitle;
-    }
-  } catch (e) {
-    // ignore (some internal pages may block access)
+// Validate that we're running in a Chrome extension context
+function validateChromeExtensionContext() {
+  if (typeof chrome === 'undefined' || !chrome.tabs) {
+    alert('This extension must be loaded as a Chrome extension, not as a regular webpage.');
+    return false;
   }
-});
+  return true;
+}
+
+// Try to get active tab URL and fill URL field if blank and it's http(s)
+if (typeof chrome !== 'undefined' && chrome.tabs) {
+  chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+    if (!tabs || !tabs[0]) return;
+    const tab = tabs[0];
+    try {
+      if (/^https?:\/\//.test(tab.url) && !document.getElementById('url').value) {
+        document.getElementById('url').value = tab.url;
+        // Generate smart title or use tab title
+        const smartTitle = generateSmartTitle(tab.url);
+        document.getElementById('title').value = tab.title || smartTitle;
+      }
+    } catch (e) {
+      // ignore (some internal pages may block access)
+    }
+  });
+}
 
 function applyToCurrent() {
   const {title, url} = getInputs();
@@ -52,6 +68,8 @@ function applyToCurrent() {
     alert('Please enter a target URL'); 
     return; 
   }
+  
+  if (!validateChromeExtensionContext()) return;
   
   const finalTitle = title || url;
   const wrapper = buildWrapperUrl(url, finalTitle);
@@ -69,6 +87,8 @@ function openInNewTab() {
     alert('Please enter a target URL'); 
     return; 
   }
+  
+  if (!validateChromeExtensionContext()) return;
   
   const finalTitle = title || url;
   const wrapper = buildWrapperUrl(url, finalTitle);
