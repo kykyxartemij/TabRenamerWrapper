@@ -4,6 +4,25 @@
   "version": "1.0.0",
   "description": "Simple custom tab titles for localhost services - keeps titles visible even when pages are unavailable.",
   "permissions": ["tabs", "activeTab"],
+  "host_permissions": [
+    "http://localhost:*/*",
+    "https://localhost:*/*",
+    "http://127.0.0.1:*/*",
+    "https://127.0.0.1:*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:*/*",
+        "https://localhost:*/*",
+        "http://127.0.0.1:*/*",
+        "https://127.0.0.1:*/*"
+      ],
+      "js": ["content_sync.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Set custom tab title",

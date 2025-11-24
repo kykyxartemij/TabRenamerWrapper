@@ -7,8 +7,13 @@
     html,body{height:100%; margin:0; font-family: Arial, Helvetica, sans-serif}
     .top{height:40px; background:#f6f6f6; display:flex; align-items:center; gap:10px; padding:0 12px; box-sizing:border-box; border-bottom:1px solid #e0e0e0}
     .title{font-weight:600; font-size:14px}
-    .url{font-size:12px; color:#666; margin-left:auto; max-width:400px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-    #frame{border:0; width:100%; height:calc(100% - 40px); display:block}
+    .url{font-size:12px; color:#666; margin-left:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px; flex:1}
+    .url input{font-size:12px; color:#333; padding:6px 8px; border-radius:4px; border:1px solid #ddd; background:#fff; min-width:300px; max-width:none; flex:1}
+    .url button{font-size:12px; padding:6px 8px; border-radius:4px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer}
+    .url button.copy{background:#fff}
+    /* Container should fill remaining viewport height below the top bar */
+    #container{height:calc(100% - 40px)}
+    #frame{border:0; width:100%; height:100%; display:block}
     .notice{padding:20px; font-size:14px; line-height:1.6}
     .notice a{color:#0366d6; text-decoration:none}
     .notice a:hover{text-decoration:underline}
@@ -19,114 +24,11 @@
 <body>
   <div class="top">
     <div class="title" id="titleElm">...</div>
+    <div id="accessHint" style="display:none; color:#c00; font-size:12px; margin-left:12px">Extension needs access to this site — enable localhost access in chrome://extensions → Details.</div>
     <div class="url" id="urlElm"></div>
   </div>
   <div id="container"></div>
 
-  <script>
-    (function(){
-      try {
-        const params = new URLSearchParams(location.search);
-        const target = params.get('target') || '';
-        const title = params.get('title') || target || 'Wrapped tab';
-
-        // Set the document title (this is the key feature!)
-        document.title = title;
-        
-        // Safely set text content to avoid XSS
-        const titleElm = document.getElementById('titleElm');
-        const urlElm = document.getElementById('urlElm');
-        const container = document.getElementById('container');
-        
-        if (!titleElm || !urlElm || !container) {
-          console.error('Required DOM elements not found');
-          return;
-        }
-        
-        titleElm.textContent = title;
-        urlElm.textContent = target;
-
-      if (!target) {
-        const notice = document.createElement('div');
-        notice.className = 'notice';
-        notice.textContent = 'No target URL provided. Please use the extension popup to set a URL and title.';
-        container.appendChild(notice);
-        return;
-      }
-
-      // Create and append the iframe
-      const iframe = document.createElement('iframe');
-      iframe.id = 'frame';
-      iframe.src = target;
-      
-      // Track if iframe loaded successfully
-      let iframeLoaded = false;
-      iframe.addEventListener('load', () => {
-        iframeLoaded = true;
-      });
-
-      container.appendChild(iframe);
-
-      // Add fallback notice for when iframe is blocked or fails to load
-      const IFRAME_LOAD_TIMEOUT_MS = 2000;
-      setTimeout(() => {
-        if (!iframeLoaded) {
-          const fallback = document.createElement('div');
-          fallback.className = 'notice';
-          
-          const strong = document.createElement('strong');
-          strong.textContent = 'Note:';
-          fallback.appendChild(strong);
-          
-          fallback.appendChild(document.createTextNode(' The page content may not be visible in this frame due to:'));
-          
-          const ul = document.createElement('ul');
-          ul.style.margin = '8px 0';
-          ul.style.paddingLeft = '20px';
-          
-          const li1 = document.createElement('li');
-          li1.textContent = 'The target service is currently unavailable';
-          ul.appendChild(li1);
-          
-          const li2 = document.createElement('li');
-          li2.textContent = 'Security headers (X-Frame-Options or CSP) preventing embedding';
-          ul.appendChild(li2);
-          
-          fallback.appendChild(ul);
-          
-          const errorHint = document.createElement('div');
-          errorHint.className = 'error-hint';
-          errorHint.textContent = '💡 Your custom tab title "' + title + '" is still visible!';
-          
-          const br = document.createElement('br');
-          errorHint.appendChild(br);
-          
-          errorHint.appendChild(document.createTextNode('To access the content directly: '));
-          
-          const link = document.createElement('a');
-          link.href = target;
-          link.target = '_blank';
-          link.rel = 'noopener';
-          link.textContent = 'Open ' + target + ' in a new tab';
-          errorHint.appendChild(link);
-          
-          fallback.appendChild(errorHint);
-          container.appendChild(fallback);
-        }
-      }, IFRAME_LOAD_TIMEOUT_MS);
-      } catch (error) {
-        console.error('Error in wrapper script:', error);
-        // Fallback: at least update the title even if other things fail
-        try {
-          const titleElm = document.getElementById('titleElm');
-          if (titleElm && titleElm.textContent === '...') {
-            titleElm.textContent = 'Error loading wrapper';
-          }
-        } catch (e) {
-          // Silent fail
-        }
-      }
-    })();
-  </script>
+  <script src="wrapper.js"></script>
 </body>
 </html>
