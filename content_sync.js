@@ -45,11 +45,16 @@
     
     // Poll for URL changes to catch all navigation types (e.g., link clicks, redirects)
     // This catches cases that other methods might miss
-    setInterval(() => {
+    const pollInterval = setInterval(() => {
       if (location.href !== lastHref) {
         notify();
       }
     }, 500);
+    
+    // Clean up interval on page unload to prevent memory leaks
+    globalThis.addEventListener('unload', () => {
+      clearInterval(pollInterval);
+    });
 
     // Initial notify
     notify();

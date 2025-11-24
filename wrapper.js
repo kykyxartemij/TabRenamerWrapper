@@ -90,11 +90,13 @@
     function debounceUrlUpdate() {
       if (urlInputDebounceTimer) {
         clearTimeout(urlInputDebounceTimer);
+        urlInputDebounceTimer = null;
       }
       urlInputDebounceTimer = setTimeout(() => {
-        if (iframe && urlInput.value && urlInput.value !== iframe.src) {
+        if (iframe && urlInput && urlInput.value && urlInput.value !== iframe.src) {
           setIframeSrc(urlInput.value);
         }
+        urlInputDebounceTimer = null;
       }, 300);
     }
 
