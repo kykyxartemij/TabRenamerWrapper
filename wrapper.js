@@ -244,6 +244,48 @@
 
     container.appendChild(iframe);
 
+    // Helper to sync URL from iframe to input field
+    function syncIframeUrl() {
+      try {
+        if (iframe?.contentWindow?.location) {
+          const current = iframe.contentWindow.location.href;
+          if (current && urlInput.value !== current) {
+            // Clear any pending debounce timer
+            if (urlInputDebounceTimer) {
+              clearTimeout(urlInputDebounceTimer);
+              urlInputDebounceTimer = null;
+            }
+            urlInput.value = current;
+          }
+        }
+      } catch (error__) {
+        // Cross-origin - will be handled by content_sync.js messages
+        console.debug('Cannot read iframe location (cross-origin)', error__);
+      }
+    }
+
+    // Detect user interaction with iframe to immediately sync URL field
+    // This provides instant feedback when user clicks or focuses the iframe
+    iframe.addEventListener('load', () => {
+      try {
+        // Add listeners to iframe content (only works for same-origin)
+        if (iframe.contentWindow && iframe.contentDocument) {
+          iframe.contentDocument.addEventListener('click', syncIframeUrl);
+          iframe.contentDocument.addEventListener('mousedown', syncIframeUrl);
+        }
+      } catch (error__) {
+        // Cross-origin - can't add listeners, rely on postMessage from content_sync.js
+        console.debug('Cannot add listeners to cross-origin iframe', error__);
+      }
+    });
+    
+    // Detect when user clicks on iframe element itself (works for all origins)
+    iframe.addEventListener('mouseenter', syncIframeUrl);
+    iframe.addEventListener('click', syncIframeUrl);
+    
+    // When wrapper regains focus after user clicked in iframe, sync URL
+    window.addEventListener('focus', syncIframeUrl);
+
     // Add fallback notice for when iframe is blocked or fails to load
     const IFRAME_LOAD_TIMEOUT_MS = 2000;
     setTimeout(() => {
